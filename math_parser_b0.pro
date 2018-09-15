@@ -13,4 +13,4 @@ HEADERS += \
     var.h \
     fun.h \
     list.h \
-    define.h
+    token.h

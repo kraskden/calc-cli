@@ -39,3 +39,24 @@ void put(void **head, void *data, int data_size)
         memcpy(prev + data_size, &elem, sizeof (void*));
     }
 }
+
+
+int is_exist(void *head, void *data, int data_size, int cmp_size)
+{
+    for (; head; memcpy(&head, head + data_size, sizeof (void*))) {
+        if (!memcmp(head, data, cmp_size))
+            return 1;
+    }
+    return 0;
+}
+
+void clear(void **head, int data_size) {
+    if (!*head)
+        return;
+    void *next;
+    memcpy(&next, *head + data_size, sizeof (void*));
+    clear(&next, data_size);
+    //printf("FREE - %p\n", *head);
+    free(*head);
+    *head = NULL;
+}
