@@ -34,7 +34,7 @@ void free_fun(fun_list **head)
     *head = NULL;
 }
 
-void fun_init_base(fun_list **head)
+/*void fun_init_base(fun_list **head)
 {
     fun add;
     add.type = fun_base;
@@ -43,4 +43,4 @@ void fun_init_base(fun_list **head)
     ADD_F("arcsin"); ADD_F("arccos"); ADD_F("arctan"); ADD_F("arcctg");
     ADD_F("exp"); ADD_F("ln"); ADD_F("lg");
     ADD_F("negative");
-}
+} */

@@ -22,7 +22,7 @@ void fun_init_base(fun_list **head)
 {
     fun add;
     add.type = fun_base;
-#define ADD_F(NAME) strcpy(add.name, (NAME)); PUSH(head, add)
+#define ADD_F(NAME) strcpy(add.name, (NAME)); PUSH(*head, add)
     ADD_F("sin"); ADD_F("cos"); ADD_F("tan"); ADD_F("ctg");
     ADD_F("arcsin"); ADD_F("arccos"); ADD_F("arctan"); ADD_F("arcctg");
     ADD_F("exp"); ADD_F("ln"); ADD_F("lg");
@@ -83,6 +83,8 @@ void print_type(token_type type)
 int is_token_correct(const token *arg)
 {
     int dot_count = 0;
+    fun f;
+    var v;
     switch (arg->type) {
     case token_const:
         for (int i = 0; i < (int)strlen(arg->name); ++i)
@@ -90,12 +92,14 @@ int is_token_correct(const token *arg)
         return (dot_count < 2);
         break;
     case token_var:
-        if (IS_EXIST_VAR(var_list_head, *arg))
+        strcpy(v.name, arg->name);
+        if (IS_EXIST_VAR(var_list_head, v))
             return 1;
         return 0;
         break;
     case token_fun:
-        if (IS_EXIST_FUNC(fun_list_head, *arg))
+        strcpy(f.name, arg->name);
+        if (IS_EXIST_FUNC(fun_list_head, f))
             return 1;
         return 0;
         break;
@@ -179,7 +183,7 @@ char* polish_convert(char *expr)
     while ((t = get_token(expr)).type != token_empty) {
         if (!is_token_correct(&t))
             goto error;
-        if (t.type == token_const)
+        if (t.type == token_const) // token_var
             strcat(ret, t.name);
         if (t.type == token_fun || t.type == token_brc_o)
             PUSH(head, t);
@@ -195,7 +199,7 @@ char* polish_convert(char *expr)
                 if ((*pop_token).type == token_fun || (*pop_token).type == token_op)
                     strcat(ret, (*pop_token).name);
             }
-            if (head->item.type == token_fun) {
+            if (head && head->item.type == token_fun) {
                 pop_token = POP_TOKEN(head);
                 strcat(ret, (*pop_token).name);
             }
@@ -209,8 +213,10 @@ char* polish_convert(char *expr)
                     ((*head).item.type == token_op &&
                     operation_get_priority((*head).item.name[0]) >=
                     operation_get_priority(t.name[0]))) {
-                        if ((pop_token = POP_TOKEN(head)))
+                        if ((pop_token = POP_TOKEN(head))) {
                             strcat(ret, (*pop_token).name);
+                            free(pop_token);
+                        }
             }
             PUSH(head, t);
             //token_stack_push(&head, &t);

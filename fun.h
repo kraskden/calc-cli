@@ -26,7 +26,7 @@ struct fun_list {
 typedef struct fun_list fun_list;
 
 #define POP_FUNC(head) POP(head, fun)
-#define IS_EXIST_FUNC(head, fun) IS_EXIST(head, fun, FUNC_NAME_SIZE)
+#define IS_EXIST_FUNC(head, fun) IS_EXIST(head, (fun), strlen((fun).name))
 #define CLEAR_FUNC(head) CLEAR(head, fun)
 
 //int add_fun(fun arg, fun_list **head);

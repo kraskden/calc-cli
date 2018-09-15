@@ -11,6 +11,6 @@ void clear(void **head, int data_size);
 #define POP(head, type) pop((void**)&head, sizeof(type))
 #define PUT(head, item) put((void**)&head, &item, sizeof(item))
 #define IS_EXIST(head, item, cmp_size) is_exist(head, (void*)&item, sizeof(item), cmp_size)
-#define CLEAR(head, type) clear((void**)head, sizeof(type))
+#define CLEAR(head, type) clear((void**)&head, sizeof(type))
 
 #endif
