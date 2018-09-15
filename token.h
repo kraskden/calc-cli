@@ -24,6 +24,7 @@ struct token_stack {
 };
 
 typedef struct token_stack token_stack;
+typedef token_stack token_list;
 
 #define POP_TOKEN(head) POP(head, token)
 #define CLEAR_TOKEN(head) CLEAR(head, token)

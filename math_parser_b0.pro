@@ -5,8 +5,6 @@ CONFIG -= qt
 
 SOURCES += \
         main.c \
-    var.c \
-    fun.c \
     list.c
 
 HEADERS += \
