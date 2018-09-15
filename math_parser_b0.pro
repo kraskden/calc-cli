@@ -12,4 +12,5 @@ SOURCES += \
 HEADERS += \
     var.h \
     fun.h \
-    list.h
+    list.h \
+    define.h

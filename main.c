@@ -3,62 +3,14 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "var.h"
-#include "fun.h"
+#include "define.h"
+
+//#include "var.h"
+//#include "fun.h"
 
 #define DOT '.'
 #define ARG_DELIMIER ';'
 #define TOKEN_NAME_SIZE 255
-
-enum token_type {
-    token_const, token_var, token_op, token_brc_o,
-    token_brc_c, token_fun, token_arg_delim, token_empty
-};
-
-typedef enum token_type token_type;
-
-struct token {
-    char *name;
-    token_type type;
-};
-
-typedef struct token token;
-
-/* TOKEN STACK */
-struct token_stack {
-    token item;
-    struct token_stack *next;
-};
-
-typedef struct token_stack token_stack;
-
-void token_stack_push(token_stack **head, const token *arg)
-{
-    token_stack *tmp = (token_stack*) malloc(sizeof (*tmp));
-    tmp->item = *arg;
-    tmp->next = *head;
-    *head = tmp;
-}
-
-token* token_stack_pop(token_stack **head)
-{
-    if (!*head)
-        return NULL;
-    token_stack *tmp = *head;
-    *head = (*head)->next;
-    return &(tmp->item);
-}
-
-void token_stack_free(token_stack **head)
-{
-    if (!*head)
-        return;
-    token_stack_free(&((*head)->next));
-    free(*head);
-    *head = NULL;
-}
-
-/* END TOKEN STACK DECLARATION */
 
 var_list *var_list_head = NULL;
 fun_list *fun_list_head = NULL;
