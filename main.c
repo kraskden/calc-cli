@@ -174,20 +174,18 @@ token get_token(char *expr)
     return ret;
 }
 
-char* polish_convert(char *expr)
+token_list *polish_convert(char *expr)
 {
+    token_list *result = NULL;
     token_stack *head = NULL;
     token t;
-    char *ret = (char*) malloc((strlen(expr) + 1) * sizeof (char));
-    *ret = 0;
     while ((t = get_token(expr)).type != token_empty) {
         if (!is_token_correct(&t))
             goto error;
         if (t.type == token_const) // token_var
-            strcat(ret, t.name);
+            PUT(result, t);
         if (t.type == token_fun || t.type == token_brc_o)
             PUSH(head, t);
-            //token_stack_push(&head, &t);
         if (t.type == token_brc_c) {
             token *pop_token;
             int is_correct = 0;
@@ -197,11 +195,11 @@ char* polish_convert(char *expr)
                     break;
                 }
                 if ((*pop_token).type == token_fun || (*pop_token).type == token_op)
-                    strcat(ret, (*pop_token).name);
+                    PUT(result, *pop_token);
             }
             if (head && head->item.type == token_fun) {
                 pop_token = POP_TOKEN(head);
-                strcat(ret, (*pop_token).name);
+                PUT(result, *pop_token);
             }
             if (!is_correct)
                 goto error;
@@ -209,17 +207,16 @@ char* polish_convert(char *expr)
         if (t.type == token_op) {
             token *pop_token;
             //int is_correct = 0;
-            while (head && /*(*head).item.type == token_fun || */
+            while (head &&
                     ((*head).item.type == token_op &&
                     operation_get_priority((*head).item.name[0]) >=
                     operation_get_priority(t.name[0]))) {
                         if ((pop_token = POP_TOKEN(head))) {
-                            strcat(ret, (*pop_token).name);
+                            PUT(result, *pop_token);
                             free(pop_token);
                         }
             }
             PUSH(head, t);
-            //token_stack_push(&head, &t);
         }
     }
     token *pop_token;
@@ -228,15 +225,13 @@ char* polish_convert(char *expr)
             break;
         if (pop_token->type != token_op)
             goto error;
-        strcat(ret, pop_token->name);
+        PUT(result, *pop_token);
     }
-    //token_stack_free(&head);
     CLEAR_TOKEN(head);
-    return ret;
+    return result;
 error:
-    //token_stack_free(&head);
     CLEAR_TOKEN(head);
-    free(ret);
+    CLEAR_TOKEN(result);
     return NULL;
 }
 
@@ -246,27 +241,22 @@ int main()
     for (int i = 0; i < 10; ++i) {
         sprintf(foo.name, "var%d", i);
         PUSH(var_list_head, foo);
-        //add_var(foo, &var_list_head);
     }
     fun_init_base(&fun_list_head);
     char *expr = malloc(TOKEN_NAME_SIZE * sizeof (*expr));
     fgets(expr, TOKEN_NAME_SIZE, stdin);
     if (*expr)
         expr[strlen(expr) - 1] = '\0';
-    //while ((print = get_token(expr)).type != token_empty) {
-    //    printf("%s", print.name);
-    //    print_type(print.type);
-    //    printf(" :: %s", is_token_correct(&print) ? "true" : "false");
-    //    putchar('\n');
-    //}
-    char *res;
+    token_list *res;
     if ((res = polish_convert(expr))) {
-        puts(res);
+        for (token_list *tmp = res; tmp; tmp = tmp->next) {
+            printf("%s ", tmp->item.name);
+        }
+        putchar('\n');
     } else {
         puts("An error occupped!\n");
     }
-    //free_var(&var_list_head);
-    //free_fun(&fun_list_head);
+    CLEAR_TOKEN(res);
     CLEAR_FUNC(fun_list_head);
     CLEAR_VAR(var_list_head);
     return 0;
