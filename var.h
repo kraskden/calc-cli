@@ -30,7 +30,7 @@ struct var_list{
 typedef struct var_list var_list;
 
 #define POP_VAR(head) POP(head, var)
-#define IS_EXIST_VAR(head, var) IS_EXIST(head, var, VAR_LENGTH)
+#define IS_EXIST_VAR(head, var) IS_EXIST(head, (var), strlen((var).name))
 #define CLEAR_VAR(head) CLEAR(head, var)
 
 //int add_var(var arg, var_list **head);

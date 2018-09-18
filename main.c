@@ -12,6 +12,9 @@
 #define ARG_DELIMIER ';'
 #define TOKEN_NAME_SIZE 255
 
+#define OK_NAME "OK"
+#define ERR_NAME "ERR"
+
 var_list *var_list_head = NULL;
 fun_list *fun_list_head = NULL;
 
@@ -80,6 +83,13 @@ void print_type(token_type type)
     }
 }
 
+int is_float_const(const char *name)
+{
+    for (int i = 0; i < (int)strlen(name); ++i)
+        if (name[i] == DOT)
+            return 1;
+    return 0;
+}
 int is_token_correct(const token *arg)
 {
     int dot_count = 0;
@@ -182,7 +192,7 @@ token_list *polish_convert(char *expr)
     while ((t = get_token(expr)).type != token_empty) {
         if (!is_token_correct(&t))
             goto error;
-        if (t.type == token_const) // token_var
+        if (t.type == token_const || t.type == token_var) // token_var
             PUT(result, t);
         if (t.type == token_fun || t.type == token_brc_o)
             PUSH(head, t);
@@ -234,6 +244,7 @@ error:
     CLEAR_TOKEN(result);
     return NULL;
 }
+
 
 int main()
 {
