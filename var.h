@@ -14,7 +14,7 @@ typedef enum var_type var_type;
 struct var {
     char name[VAR_LENGTH];
     var_type type;
-    union value {
+    struct value {
         int int_val;
         double double_val;
     } value;

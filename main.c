@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "token.h"
 
@@ -277,7 +278,7 @@ void expr_to_var(char *src, var *out)
     }
 }
 
-int caclulate(token_list *head, var *out)
+int calculate(token_list *head, var *out)
 {
     var_list *stack = NULL;
     var to_push;
@@ -302,15 +303,82 @@ int caclulate(token_list *head, var *out)
                 var *op1, *op2;
                 if (!stack)
                     return 0;
-                op1 = POP_VAR(stack);
+                op2 = POP_VAR(stack); // Test!!! Maybe first op1, next - op2
                 if (!stack)
                     return 0;
-                op2 = POP_VAR(stack);
+                op1 = POP_VAR(stack);
+                var res;
+
+#define OPERATION_APPLY_INT(operation) \
+    if (!strcmp(head->item.name, #operation)) { \
+        res.type = var_int; \
+        res.value.int_val = op1->value.int_val operation op2->value.int_val; \
+        printf("Operation " #operation " int between %d and %d; result : %d\n" \
+        , op1->value.int_val, op2->value.int_val, res.value.int_val); \
+        PUSH(stack, res);  \
+    }
+
+#define OPERATION_APPLY_DOUBLE(operation) \
+    if (!strcmp(head->item.name, #operation)) { \
+        res.type = var_double; \
+        res.value.int_val = op1->value.double_val operation op2->value.double_val; \
+        PUSH(stack, res); \
+    }
+                if (op1->type == var_int && op2->type == var_int) {
+                    OPERATION_APPLY_INT(+);
+                    OPERATION_APPLY_INT(-);
+                    OPERATION_APPLY_INT(*);
+                    if (op2->value.int_val != 0) {
+                        if (op1->value.int_val % op2->value.int_val) {
+                            op1->value.double_val = op1->value.int_val;
+                            op2->value.double_val = op2->value.int_val;
+                            OPERATION_APPLY_DOUBLE(/);
+                        } else {
+                            OPERATION_APPLY_INT(/);
+                        }
+                    } else {
+                        goto fail;
+                    }
+                    if (!strcmp(head->item.name, "^")) {
+                        res.type = var_double;
+                        res.value.double_val = pow(op1->value.int_val, op2->value.int_val);
+                        PUSH(stack, res);
+                    }
+                } else {
+                    // FIX !! - OK
+                    if (op1->type == var_int)
+                        op1->value.double_val = op1->value.int_val;
+                    if (op2->type == var_int)
+                        op2->value.double_val = op2->value.int_val;
+                    OPERATION_APPLY_DOUBLE(+);
+                    OPERATION_APPLY_DOUBLE(-);
+                    OPERATION_APPLY_DOUBLE(*);
+                    if (op2->value.double_val != 0) {
+                        OPERATION_APPLY_DOUBLE(/)
+                    } else
+                        goto fail;
+                    if (!strcmp(head->item.name, "^")) {
+                        res.type = var_double;
+                        res.value.double_val = pow(op1->value.double_val,
+                                                   op2->value.double_val);
+                        PUSH(stack, res);
+                    }
+                }
             }
         } else if (head->item.type == token_fun) {
-
+            // Add func
         }
     }
+    if (!stack)
+        goto fail;
+    var *result = POP_VAR(stack);
+    *out = *result;
+    if (stack)
+        goto fail;
+    return 1;
+fail:
+    CLEAR_VAR(stack);
+    return 0;
 }
 
 int main()
@@ -333,6 +401,16 @@ int main()
         putchar('\n');
     } else {
         puts("An error occupped!\n");
+    }
+    var answer;
+    if (calculate(res, &answer)) {
+        if (answer.type == var_double) {
+            printf("Double: %lf\n", answer.value.double_val);
+        } else {
+            printf("Int: %d", answer.value.int_val);
+        }
+    } else {
+        puts("An error calc occuped!\n");
     }
     CLEAR_TOKEN(res);
     CLEAR_FUNC(fun_list_head);
