@@ -18,8 +18,16 @@
 var_list *var_list_head = NULL;
 fun_list *fun_list_head = NULL;
 
+// Need to remove this holy shit and replace it by list
 const char bin_operations[] = {'+', '-', '*', '/', '^', '=', 'n'};
 const int bin_operation_order[] = {5, 5, 10, 10, 20, 1, 5};
+
+/*
+ * TODO LIST:
+ * 1) Remove bin_operators[] to list
+ * 2) var.value transform to num structurre
+ * 3)
+ */
 
 void fun_init_base(fun_list **head)
 {
@@ -30,6 +38,7 @@ void fun_init_base(fun_list **head)
     ADD_F("arcsin"); ADD_F("arccos"); ADD_F("arctan"); ADD_F("arcctg");
     ADD_F("exp"); ADD_F("ln"); ADD_F("lg");
     ADD_F("negative");
+#undef ADD_F
 }
 
 int operation_get_priority(char op)
@@ -245,6 +254,64 @@ error:
     return NULL;
 }
 
+int name_to_var(char *src, var *out)
+{
+    for (var_list *tmp = var_list_head; tmp; tmp = tmp->next) {
+        if (!strcmp(src, tmp->variable.name)) {
+            *out = tmp->variable;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void expr_to_var(char *src, var *out)
+{
+    strcpy(out->name, src);
+    if (strchr(src, DOT)) {
+        out->type = var_double;
+        out->value.double_val = atof(src);
+    } else {
+        out->type = var_int;
+        out->value.int_val = atoi(src);
+    }
+}
+
+int caclulate(token_list *head, var *out)
+{
+    var_list *stack = NULL;
+    var to_push;
+    for (; head; head = head->next) {
+        if (head->item.type == token_const) {
+            expr_to_var(head->item.name, &to_push);
+            PUSH(stack, to_push);
+        } else if (head->item.type == token_var) {
+            name_to_var(head->item.name, &to_push);
+            PUSH(stack, to_push);
+        } else if (head->item.type == token_op) {
+            if (!strcmp(head->item.name, "negative")) {
+                if (!stack)
+                    return 0;
+                var *op = POP_VAR(stack);
+                if (op->type == var_double)
+                    op->value.double_val *= -1;
+                else
+                    op->value.int_val *= -1;
+                PUSH(stack, *op);
+            } else {
+                var *op1, *op2;
+                if (!stack)
+                    return 0;
+                op1 = POP_VAR(stack);
+                if (!stack)
+                    return 0;
+                op2 = POP_VAR(stack);
+            }
+        } else if (head->item.type == token_fun) {
+
+        }
+    }
+}
 
 int main()
 {
