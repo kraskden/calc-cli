@@ -5,10 +5,14 @@ CONFIG -= qt
 
 SOURCES += \
         main.c \
-    list.c
+    list.c \
+    extmath.c
 
 HEADERS += \
     var.h \
     fun.h \
     list.h \
-    token.h
+    token.h \
+    extmath.h
+
+DISTFILES +=

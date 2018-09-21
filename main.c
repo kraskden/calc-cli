@@ -9,6 +9,8 @@
 #include "var.h"
 #include "fun.h"
 
+#include "extmath.h"
+
 #define DOT '.'
 #define ARG_DELIMIER ';'
 #define TOKEN_NAME_SIZE 255
@@ -36,9 +38,9 @@ void fun_init_base(fun_list **head)
     add.type = fun_base;
 #define ADD_F(NAME) strcpy(add.name, (NAME)); PUSH(*head, add)
     ADD_F("sin"); ADD_F("cos"); ADD_F("tan"); ADD_F("ctg");
-    ADD_F("arcsin"); ADD_F("arccos"); ADD_F("arctan"); ADD_F("arcctg");
-    ADD_F("exp"); ADD_F("ln"); ADD_F("lg");
-    ADD_F("negative");
+    ADD_F("asin"); ADD_F("acos"); ADD_F("atan"); ADD_F("actg");
+    ADD_F("exp"); ADD_F("log"); ADD_F("log10"); ADD_F("sqrt");
+    //ADD_F("negative");
 #undef ADD_F
 }
 
@@ -366,11 +368,49 @@ int calculate(token_list *head, var *out)
                         PUSH(stack, res);
                     }
                 }
+                free(op1);
+                free(op2);
             }
         } else if (head->item.type == token_fun) {
+            var *op;
+            if (!stack)
+                goto fail;
+            op = POP_VAR(stack);
+            if (op->type == var_int) {
+                op->value.double_val = op->value.int_val;
+            }
+            var res;
+            res.type = var_double;
+
+#define FUN_CALL(fun) \
+    res.value.double_val = fun(op->value.double_val); \
+    printf("Fun:: " #fun "(%lf) = %lf\n", op->value.double_val, res.value.double_val); \
+    PUSH(stack, res);
+
+#define FUN_APPLY(fun) \
+    if (!strcmp(head->item.name, #fun)) { \
+        FUN_CALL(fun); \
+    }
+
+#define FUN_APPLY_DIAPASONE(fun, left, right) \
+    if (!strcmp(head->item.name, #fun)) { \
+        if (op->value.double_val >= left && op->value.double_val <= right) { \
+            FUN_CALL(fun); \
+        } else \
+            goto fail; \
+    }
+            FUN_APPLY(sin); FUN_APPLY(cos); FUN_APPLY(tan); FUN_APPLY(ctg);
+            FUN_APPLY(exp); FUN_APPLY(atan); FUN_APPLY(actg);
+            FUN_APPLY_DIAPASONE(asin, -1, 1);
+            FUN_APPLY_DIAPASONE(acos, -1, 1);
+            FUN_APPLY_DIAPASONE(sqrt, 0, INFINITY);
+            FUN_APPLY_DIAPASONE(log, 0, INFINITY);
+            FUN_APPLY_DIAPASONE(log10, 0, INFINITY);
             // Add func
+            free(op);
         }
     }
+
     if (!stack)
         goto fail;
     var *result = POP_VAR(stack);
@@ -384,6 +424,9 @@ fail:
 
 #undef OPERATION_APPLY_DOUBLE
 #undef OPERATION_APPLY_INT
+#undef FUN_APPLY
+#undef FUN_APPLY_DIAPASONE
+#undef FUN_CALL
 }
 
 int main()
