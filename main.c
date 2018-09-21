@@ -44,6 +44,18 @@ void fun_init_base(fun_list **head)
 #undef ADD_F
 }
 
+void var_init(var_list **head)
+{
+    var add;
+    add.type = var_double;
+#define ADD_V(NAME, VAL) strcpy(add.name, (NAME)); add.value.double_val = (VAL); \
+    PUSH(*head, add);
+    ADD_V("pi", M_PI); ADD_V("e", M_E); ADD_V("ln10", M_LN10);
+    ADD_V("ln2", M_LN2); ADD_V("sqrt2", M_SQRT2); ADD_V("log10e", M_LOG10E);
+    ADD_V("log2e", M_LOG2E); ADD_V("pi2", M_PI_2);
+#undef ADD_V
+}
+
 int operation_get_priority(char op)
 {
     for (int i = 0; i < (int)sizeof (bin_operations); ++i)
@@ -102,6 +114,7 @@ int is_float_const(const char *name)
             return 1;
     return 0;
 }
+
 int is_token_correct(const token *arg)
 {
     int dot_count = 0;
@@ -437,6 +450,7 @@ int main()
         PUSH(var_list_head, foo);
     }
     fun_init_base(&fun_list_head);
+    var_init(&var_list_head);
     char *expr = malloc(TOKEN_NAME_SIZE * sizeof (*expr));
     fgets(expr, TOKEN_NAME_SIZE, stdin);
     if (*expr)
