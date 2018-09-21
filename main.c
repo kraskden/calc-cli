@@ -313,15 +313,17 @@ int calculate(token_list *head, var *out)
     if (!strcmp(head->item.name, #operation)) { \
         res.type = var_int; \
         res.value.int_val = op1->value.int_val operation op2->value.int_val; \
-        printf("Operation " #operation " int between %d and %d; result : %d\n" \
-        , op1->value.int_val, op2->value.int_val, res.value.int_val); \
+        printf("Int:: %d " #operation " %d = %d\n", op1->value.int_val, \
+        op2->value.int_val, res.value.int_val); \
         PUSH(stack, res);  \
     }
 
 #define OPERATION_APPLY_DOUBLE(operation) \
     if (!strcmp(head->item.name, #operation)) { \
         res.type = var_double; \
-        res.value.int_val = op1->value.double_val operation op2->value.double_val; \
+        res.value.double_val = op1->value.double_val operation op2->value.double_val; \
+        printf("Double:: %lf " #operation " %lf = %lf\n", op1->value.double_val, \
+        op2->value.double_val, res.value.double_val); \
         PUSH(stack, res); \
     }
                 if (op1->type == var_int && op2->type == var_int) {
@@ -379,6 +381,9 @@ int calculate(token_list *head, var *out)
 fail:
     CLEAR_VAR(stack);
     return 0;
+
+#undef OPERATION_APPLY_DOUBLE
+#undef OPERATION_APPLY_INT
 }
 
 int main()
@@ -407,7 +412,7 @@ int main()
         if (answer.type == var_double) {
             printf("Double: %lf\n", answer.value.double_val);
         } else {
-            printf("Int: %d", answer.value.int_val);
+            printf("Int: %d\n", answer.value.int_val);
         }
     } else {
         puts("An error calc occuped!\n");
