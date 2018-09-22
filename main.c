@@ -345,16 +345,18 @@ int calculate(token_list *head, var *out)
                     OPERATION_APPLY_INT(+);
                     OPERATION_APPLY_INT(-);
                     OPERATION_APPLY_INT(*);
-                    if (op2->value.int_val != 0) {
-                        if (op1->value.int_val % op2->value.int_val) {
-                            op1->value.double_val = op1->value.int_val;
-                            op2->value.double_val = op2->value.int_val;
-                            OPERATION_APPLY_DOUBLE(/);
+                    if (!strcmp(head->item.name, "/")) {
+                        if (op2->value.int_val != 0) {
+                            if (op1->value.int_val % op2->value.int_val) {
+                                op1->value.double_val = op1->value.int_val;
+                                op2->value.double_val = op2->value.int_val;
+                                OPERATION_APPLY_DOUBLE(/);
+                            } else {
+                                OPERATION_APPLY_INT(/);
+                            }
                         } else {
-                            OPERATION_APPLY_INT(/);
+                            goto fail;
                         }
-                    } else {
-                        goto fail;
                     }
                     if (!strcmp(head->item.name, "^")) {
                         res.type = var_double;
@@ -423,7 +425,6 @@ int calculate(token_list *head, var *out)
             free(op);
         }
     }
-
     if (!stack)
         goto fail;
     var *result = POP_VAR(stack);
@@ -444,11 +445,6 @@ fail:
 
 int main()
 {
-    var foo;
-    for (int i = 0; i < 10; ++i) {
-        sprintf(foo.name, "var%d", i);
-        PUSH(var_list_head, foo);
-    }
     fun_init_base(&fun_list_head);
     var_init(&var_list_head);
     char *expr = malloc(TOKEN_NAME_SIZE * sizeof (*expr));
