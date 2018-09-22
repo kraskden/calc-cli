@@ -148,13 +148,13 @@ int is_token_correct(const token *arg)
     }
 }
 
-token get_token(char *expr)
+token get_token(char *expr, int *start_pos)
 {
     token ret;
     ret.type = token_empty;
     if (!*expr)
         return ret;
-    static int pos = 0;
+    int pos = *start_pos;
     char ch;
     int  prev_pos = pos - 1;
     char* token_name = (char*) malloc(TOKEN_NAME_SIZE * sizeof (*token_name));
@@ -205,6 +205,7 @@ token get_token(char *expr)
         ret.name = (char*) malloc((strlen(token_name) + 1) * sizeof (char));
         strcpy(ret.name, token_name);
     }
+    *start_pos = pos;
     free(token_name);
     return ret;
 }
@@ -214,7 +215,8 @@ token_list *polish_convert(char *expr)
     token_list *result = NULL;
     token_stack *head = NULL;
     token t;
-    while ((t = get_token(expr)).type != token_empty) {
+    int pos = 0;
+    while ((t = get_token(expr, &pos)).type != token_empty) {
         if (!is_token_correct(&t))
             goto error;
         if (t.type == token_const || t.type == token_var) // token_var
@@ -443,34 +445,79 @@ fail:
 #undef FUN_CALL
 }
 
+int produse(char *expr, var *out)
+{
+    token_list *res;
+    if (!(res = polish_convert(expr))) {
+        return 0;
+    }
+    if (!calculate(res, out))
+        return 0;
+    CLEAR_TOKEN(res);
+    return 1;
+}
+
+int var_add(char *expr, var_list **head)
+{
+    int pos = 0;
+    var add;
+    token t;
+    if ((t = get_token(expr, &pos)).type != token_empty) {
+        char *name = t.name;
+        if (strcmp((t = get_token(expr, &pos)).name, "="))
+            return 0;
+        char *value = malloc(strlen(expr));
+        strcpy(value, expr + pos);
+        if (produse(value, &add)) {
+            strcpy(add.name, name);
+            PUSH(*head, add);
+            return 1;
+        }
+        else
+            return -1;
+    } else
+        return 0;
+}
+
 int main()
 {
     fun_init_base(&fun_list_head);
     var_init(&var_list_head);
     char *expr = malloc(TOKEN_NAME_SIZE * sizeof (*expr));
-    fgets(expr, TOKEN_NAME_SIZE, stdin);
-    if (*expr)
-        expr[strlen(expr) - 1] = '\0';
-    token_list *res;
-    if ((res = polish_convert(expr))) {
-        for (token_list *tmp = res; tmp; tmp = tmp->next) {
-            printf("%s ", tmp->item.name);
+    while (1) {
+        fgets(expr, TOKEN_NAME_SIZE, stdin);
+        if (*expr)
+            expr[strlen(expr) - 1] = '\0';
+        switch (var_add(expr, &var_list_head)) {
+        case 0:
+            break;
+        case 1:
+            continue;
+        case -1:
+            puts("Error var defined!");
+            continue;
         }
-        putchar('\n');
-    } else {
-        puts("An error occupped!\n");
-    }
-    var answer;
-    if (calculate(res, &answer)) {
-        if (answer.type == var_double) {
-            printf("Double: %lf\n", answer.value.double_val);
+        token_list *res;
+        if ((res = polish_convert(expr))) {
+            for (token_list *tmp = res; tmp; tmp = tmp->next) {
+                printf("%s ", tmp->item.name);
+            }
+            putchar('\n');
         } else {
-            printf("Int: %d\n", answer.value.int_val);
+            puts("An error occupped!\n");
         }
-    } else {
-        puts("An error calc occuped!\n");
+        var answer;
+        if (calculate(res, &answer)) {
+            if (answer.type == var_double) {
+                printf("Double: %lf\n", answer.value.double_val);
+            } else {
+                printf("Int: %d\n", answer.value.int_val);
+            }
+        } else {
+            puts("An error calc occuped!\n");
+        }
+        CLEAR_TOKEN(res);
     }
-    CLEAR_TOKEN(res);
     CLEAR_FUNC(fun_list_head);
     CLEAR_VAR(var_list_head);
     return 0;
