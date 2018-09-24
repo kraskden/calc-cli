@@ -6,7 +6,9 @@ CONFIG -= qt
 SOURCES += \
         main.c \
     list.c \
-    extmath.c
+    extmath.c \
+    var.c \
+    token.c
 
 HEADERS += \
     var.h \

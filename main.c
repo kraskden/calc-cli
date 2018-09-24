@@ -11,10 +11,6 @@
 
 #include "extmath.h"
 
-#define DOT '.'
-#define ARG_DELIMIER ';'
-#define TOKEN_NAME_SIZE 255
-
 #define OK_NAME "OK"
 #define ERR_NAME "ERR"
 
@@ -29,7 +25,8 @@ const int bin_operation_order[] = {5, 5, 10, 10, 20, 1, 5};
  * TODO LIST:
  * 1) Remove bin_operators[] to list
  * 2) var.value transform to num structurre
- * 3)
+ * 3) Delim custom and build-in variable (such as pi, e, ect)
+ * 4) Delim custom and build-in function
  */
 
 void fun_init_base(fun_list **head)
@@ -42,18 +39,6 @@ void fun_init_base(fun_list **head)
     ADD_F("exp"); ADD_F("log"); ADD_F("log10"); ADD_F("sqrt");
     //ADD_F("negative");
 #undef ADD_F
-}
-
-void var_init(var_list **head)
-{
-    var add;
-    add.type = var_double;
-#define ADD_V(NAME, VAL) strcpy(add.name, (NAME)); add.value.double_val = (VAL); \
-    PUSH(*head, add);
-    ADD_V("pi", M_PI); ADD_V("e", M_E); ADD_V("ln10", M_LN10);
-    ADD_V("ln2", M_LN2); ADD_V("sqrt2", M_SQRT2); ADD_V("log10e", M_LOG10E);
-    ADD_V("log2e", M_LOG2E); ADD_V("pi2", M_PI_2);
-#undef ADD_V
 }
 
 int operation_get_priority(char op)
@@ -78,14 +63,6 @@ int is_operation_correct(char *name)
         return 0;
 }
 
-void skip_spaces(char *expr, int *pos)
-{
-    int i;
-    for (i = *pos; i < (int)strlen(expr); ++i)
-        if (expr[i] != ' ' && expr[i] != '\t')
-            break;
-    *pos = i;
-}
 
 void print_type(token_type type)
 {
@@ -146,68 +123,6 @@ int is_token_correct(const token *arg)
         return 1;
         break;
     }
-}
-
-token get_token(char *expr, int *start_pos)
-{
-    token ret;
-    ret.type = token_empty;
-    if (!*expr)
-        return ret;
-    int pos = *start_pos;
-    char ch;
-    int  prev_pos = pos - 1;
-    char* token_name = (char*) malloc(TOKEN_NAME_SIZE * sizeof (*token_name));
-    skip_spaces(expr, &pos);
-    if ((ch = expr[pos++])) {
-        *token_name = ch;
-        token_name[1] = '\0';
-        if (ch == '(')
-            ret.type = token_brc_o;
-        else if (ch == ')')
-            ret.type = token_brc_c;
-        else if (ch == ARG_DELIMIER)
-            ret.type = token_arg_delim;
-        else if (ch == '-' && (pos == 1 ||
-        (!isalpha(expr[prev_pos]) && !isdigit(expr[prev_pos]) && expr[prev_pos] != ')'))) {
-            //ret.type = token_fun;
-            ret.type = token_op;
-            strcpy(token_name, "negative");
-        } else
-            ret.type = token_op;
-        if (isdigit(ch) || (ch == DOT)) {
-            ret.type = token_const;
-            int i;
-            for (i = 1; (ch = expr[pos]); ) {
-                if (!isdigit(ch) && (ch != DOT)) {
-                    break;
-                } else {
-                    pos++;
-                    token_name[i++] = ch;
-                }
-            }
-            token_name[i] = '\0';
-        } else if (isalpha(ch) || ch == '_') {
-            ret.type = token_var;
-            int i;
-            for (i = 1; (ch = expr[pos]); ) {
-                if (ch == '(') {
-                    ret.type = token_fun;
-                    break;
-                }
-                if (isalpha(ch) || isdigit(ch) || ch == '_') {
-                    pos++;
-                    token_name[i++] = ch;
-                } else
-                    break;
-            }
-        }
-        ret.name = (char*) malloc((strlen(token_name) + 1) * sizeof (char));
-        strcpy(ret.name, token_name);
-    }
-    *start_pos = pos;
-    free(token_name);
-    return ret;
 }
 
 token_list *polish_convert(char *expr)
@@ -272,29 +187,6 @@ error:
     return NULL;
 }
 
-int name_to_var(char *src, var *out)
-{
-    for (var_list *tmp = var_list_head; tmp; tmp = tmp->next) {
-        if (!strcmp(src, tmp->variable.name)) {
-            *out = tmp->variable;
-            return 1;
-        }
-    }
-    return 0;
-}
-
-void expr_to_var(char *src, var *out)
-{
-    strcpy(out->name, src);
-    if (strchr(src, DOT)) {
-        out->type = var_double;
-        out->value.double_val = atof(src);
-    } else {
-        out->type = var_int;
-        out->value.int_val = atoi(src);
-    }
-}
-
 int calculate(token_list *head, var *out)
 {
     var_list *stack = NULL;
@@ -304,7 +196,7 @@ int calculate(token_list *head, var *out)
             expr_to_var(head->item.name, &to_push);
             PUSH(stack, to_push);
         } else if (head->item.type == token_var) {
-            name_to_var(head->item.name, &to_push);
+            name_to_var(var_list_head, head->item.name, &to_push);
             PUSH(stack, to_push);
         } else if (head->item.type == token_op) {
             if (!strcmp(head->item.name, "negative")) {
@@ -470,7 +362,8 @@ int var_add(char *expr, var_list **head)
         strcpy(value, expr + pos);
         if (produse(value, &add)) {
             strcpy(add.name, name);
-            PUSH(*head, add);
+            //PUSH(*head, add);
+            var_to_list(head, add);
             return 1;
         }
         else
@@ -478,6 +371,7 @@ int var_add(char *expr, var_list **head)
     } else
         return 0;
 }
+
 
 int main()
 {
@@ -513,6 +407,9 @@ int main()
             } else {
                 printf("Int: %d\n", answer.value.int_val);
             }
+            strcpy(answer.name, "ans");
+            //PUSH(var_list_head, answer);
+            var_to_list(&var_list_head, answer);
         } else {
             puts("An error calc occuped!\n");
         }

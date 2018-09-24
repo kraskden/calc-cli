@@ -37,4 +37,9 @@ typedef struct var_list var_list;
 //var* get_var(const char *name, var_list *head);
 //void free_var(var_list **head);
 
+void var_init(var_list **head);
+int name_to_var(var_list *head, char *src, var *out);
+void expr_to_var(char *src, var *out);
+void var_to_list(var_list **head, var arg);
+
 #endif
