@@ -29,18 +29,6 @@ const int bin_operation_order[] = {5, 5, 10, 10, 20, 1, 5};
  * 4) Delim custom and build-in function
  */
 
-void fun_init_base(fun_list **head)
-{
-    fun add;
-    add.type = fun_base;
-#define ADD_F(NAME) strcpy(add.name, (NAME)); PUSH(*head, add)
-    ADD_F("sin"); ADD_F("cos"); ADD_F("tan"); ADD_F("ctg");
-    ADD_F("asin"); ADD_F("acos"); ADD_F("atan"); ADD_F("actg");
-    ADD_F("exp"); ADD_F("log"); ADD_F("log10"); ADD_F("sqrt");
-    //ADD_F("negative");
-#undef ADD_F
-}
-
 int operation_get_priority(char op)
 {
     for (int i = 0; i < (int)sizeof (bin_operations); ++i)
@@ -62,7 +50,6 @@ int is_operation_correct(char *name)
     else
         return 0;
 }
-
 
 void print_type(token_type type)
 {

@@ -8,7 +8,8 @@ SOURCES += \
     list.c \
     extmath.c \
     var.c \
-    token.c
+    token.c \
+    fun.c
 
 HEADERS += \
     var.h \

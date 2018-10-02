@@ -5,6 +5,7 @@
 #define EXPR_SIZE 255
 
 #include "list.h"
+#include <string.h>
 
 enum fun_type {fun_base, fun_extended};
 
@@ -34,4 +35,5 @@ typedef struct fun_list fun_list;
 //void free_fun(fun_list **head);
 //void fun_init_base(fun_list **head);
 
+void fun_init_base(fun_list **head);
 #endif
