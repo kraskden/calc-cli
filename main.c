@@ -92,13 +92,13 @@ int is_token_correct(const token *arg)
         break;
     case token_var:
         strcpy(v.name, arg->name);
-        if (IS_EXIST_VAR(var_list_head, v))
+        if (FIND_VAR(var_list_head, v))
             return 1;
         return 0;
         break;
     case token_fun:
         strcpy(f.name, arg->name);
-        if (IS_EXIST_FUNC(fun_list_head, f))
+        if (FIND_FUN(fun_list_head, f))
             return 1;
         return 0;
         break;
@@ -268,41 +268,64 @@ int calculate(token_list *head, var *out)
                 free(op2);
             }
         } else if (head->item.type == token_fun) {
-            var *op;
-            if (!stack)
+            const fun *prod = name_to_fun(fun_list_head, head->item.name);
+            if (!prod)
                 goto fail;
-            op = POP_VAR(stack);
-            if (op->type == var_int) {
-                op->value.double_val = op->value.int_val;
+            var **op = malloc(sizeof(*op) * prod->par_amount);
+            int i;
+            for (i = 0; i < prod->par_amount && stack; ++i) {
+                op[i] = POP_VAR(stack);
+                if (op[i]->type == var_int) {
+                    op[i]->value.double_val = op[i]->value.int_val;
+                }
             }
+            if (!stack && i < prod->par_amount)
+                goto fail;
+            //op = POP_VAR(stack);
+            //if (op->type == var_int) {
+            //    op->value.double_val = op->value.int_val;
+            //}
             var res;
             res.type = var_double;
 
-#define FUN_CALL(fun) \
-    res.value.double_val = fun(op->value.double_val); \
-    printf("Fun:: " #fun "(%lf) = %lf\n", op->value.double_val, res.value.double_val); \
+#define FUN_CALL_1(fun) \
+    res.value.double_val = fun(op[0]->value.double_val); \
+    printf("Fun:: " #fun "(%lf) = %lf\n", op[0]->value.double_val, res.value.double_val); \
     PUSH(stack, res);
 
-#define FUN_APPLY(fun) \
+#define FUN_APPLY_1(fun) \
     if (!strcmp(head->item.name, #fun)) { \
-        FUN_CALL(fun); \
+        FUN_CALL_1(fun); \
     }
 
-#define FUN_APPLY_DIAPASONE(fun, left, right) \
+#define FUN_APPLY_DIAPASONE_1(fun, left, right) \
     if (!strcmp(head->item.name, #fun)) { \
-        if (op->value.double_val >= left && op->value.double_val <= right) { \
-            FUN_CALL(fun); \
+        if (op[0]->value.double_val >= left && op[0]->value.double_val <= right) { \
+            FUN_CALL_1(fun); \
         } else \
             goto fail; \
     }
-            FUN_APPLY(sin); FUN_APPLY(cos); FUN_APPLY(tan); FUN_APPLY(ctg);
-            FUN_APPLY(exp); FUN_APPLY(atan); FUN_APPLY(actg);
-            FUN_APPLY_DIAPASONE(asin, -1, 1);
-            FUN_APPLY_DIAPASONE(acos, -1, 1);
-            FUN_APPLY_DIAPASONE(sqrt, 0, INFINITY);
-            FUN_APPLY_DIAPASONE(log, 0, INFINITY);
-            FUN_APPLY_DIAPASONE(log10, 0, INFINITY);
+
+#define FUN_APPLY_2(fun) \
+    if (!strcmp(head->item.name, #fun)) { \
+        if (!fun(op, prod->par_amount, &res.value.double_val)) { \
+            goto fail; \
+        } \
+        PUSH(stack, res); \
+    }
+
+            FUN_APPLY_1(sin); FUN_APPLY_1(cos); FUN_APPLY_1(tan); FUN_APPLY_1(ctg);
+            FUN_APPLY_1(exp); FUN_APPLY_1(atan); FUN_APPLY_1(actg);
+            FUN_APPLY_DIAPASONE_1(asin, -1, 1);
+            FUN_APPLY_DIAPASONE_1(acos, -1, 1);
+            FUN_APPLY_DIAPASONE_1(sqrt, 0, INFINITY);
+            FUN_APPLY_DIAPASONE_1(ln, 0, INFINITY);
+            FUN_APPLY_DIAPASONE_1(log10, 0, INFINITY);
             // Add func
+            FUN_APPLY_2(logbase);
+            for (int i = 0; i < prod->par_amount; ++i) {
+                free(op[i]);
+            }
             free(op);
         }
     }
@@ -319,9 +342,10 @@ fail:
 
 #undef OPERATION_APPLY_DOUBLE
 #undef OPERATION_APPLY_INT
-#undef FUN_APPLY
-#undef FUN_APPLY_DIAPASONE
-#undef FUN_CALL
+#undef FUN_APPLY_1
+#undef FUN_APPLY_DIAPASONE_1
+#undef FUN_CALL_1
+#undef FUN_APPLY_2
 }
 
 int produse(char *expr, var *out)

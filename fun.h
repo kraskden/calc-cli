@@ -11,9 +11,18 @@ enum fun_type {fun_base, fun_extended};
 
 typedef enum fun_type fun_type;
 
+struct str_list {
+    char name[FUNC_NAME_SIZE];
+    struct str_list *next;
+};
+
+typedef struct str_list str_list;
+
 struct fun {
     char name[FUNC_NAME_SIZE];
     fun_type type;
+    int par_amount;
+    str_list *par;
     char expr[EXPR_SIZE];
 };
 
@@ -27,7 +36,7 @@ struct fun_list {
 typedef struct fun_list fun_list;
 
 #define POP_FUNC(head) POP(head, fun)
-#define IS_EXIST_FUNC(head, fun) IS_EXIST(head, (fun), strlen((fun).name))
+#define FIND_FUN(head, fun) FIND(head, (fun), strlen((fun).name))
 #define CLEAR_FUNC(head) CLEAR(head, fun)
 
 //int add_fun(fun arg, fun_list **head);
@@ -36,4 +45,5 @@ typedef struct fun_list fun_list;
 //void fun_init_base(fun_list **head);
 
 void fun_init_base(fun_list **head);
+const fun* name_to_fun(const fun_list *head, const char* name);
 #endif

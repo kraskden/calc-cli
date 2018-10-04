@@ -41,13 +41,13 @@ void put(void **head, void *data, int data_size)
 }
 
 
-int is_exist(void *head, void *data, int data_size, int cmp_size)
+void* find(void *head, void *data, int data_size, int cmp_size)
 {
     for (; head; memcpy(&head, head + data_size, sizeof (void*))) {
         if (!memcmp(head, data, cmp_size))
-            return 1;
+            return head;
     }
-    return 0;
+    return NULL;
 }
 
 void clear(void **head, int data_size) {
