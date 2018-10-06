@@ -8,82 +8,27 @@
 
 #include "var.h"
 #include "fun.h"
-
 #include "extmath.h"
-
-#define OK_NAME "OK"
-#define ERR_NAME "ERR"
+#include "operations.h"
 
 var_list *var_list_head = NULL;
 fun_list *fun_list_head = NULL;
-
-// Need to remove this holy shit and replace it by list
-const char bin_operations[] = {'+', '-', '*', '/', '^', '=', 'n'};
-const int bin_operation_order[] = {5, 5, 10, 10, 20, 1, 5};
+operation_list *op_list_head = NULL;
 
 /*
  * TODO LIST:
- * 1) Remove bin_operators[] to list
+ * 1) Remove bin_operators[] to list - OK
  * 2) var.value transform to num structurre
  * 3) Delim custom and build-in variable (such as pi, e, ect)
  * 4) Delim custom and build-in function
  */
-
-int operation_get_priority(char op)
-{
-    for (int i = 0; i < (int)sizeof (bin_operations); ++i)
-        if (bin_operations[i] == op)
-            return bin_operation_order[i];
-    return 0;
-}
-
-int is_operation_correct(char *name)
-{
-    if (strlen(name) == 1) {
-        int ret = 0;
-        for (int i = 0; i < (int)sizeof (bin_operations); ++i)
-            if (*name == bin_operations[i])
-                ret = 1;
-        return ret;
-    } else if (!strcmp(name, "negative"))
-        return 1;
-    else
-        return 0;
-}
-
-void print_type(token_type type)
-{
-    switch (type) {
-    case token_const:
-        printf(" :: Const");
-        break;
-    case token_fun:
-        printf(" :: Function");
-        break;
-    case token_var:
-        printf(" :: Variable");
-        break;
-    case token_op:
-        printf(" :: Operator");
-        break;
-    default:
-        printf(" :: Other");
-    }
-}
-
-int is_float_const(const char *name)
-{
-    for (int i = 0; i < (int)strlen(name); ++i)
-        if (name[i] == DOT)
-            return 1;
-    return 0;
-}
 
 int is_token_correct(const token *arg)
 {
     int dot_count = 0;
     fun f;
     var v;
+    operation o;
     switch (arg->type) {
     case token_const:
         for (int i = 0; i < (int)strlen(arg->name); ++i)
@@ -103,7 +48,9 @@ int is_token_correct(const token *arg)
         return 0;
         break;
     case token_op:
-        return  is_operation_correct(arg->name);
+        strcpy(o.name, arg->name);
+        if (FIND_OP(op_list_head, o))
+            return 1;
         return 0;
         break;
     default:
@@ -145,11 +92,10 @@ token_list *polish_convert(char *expr)
         }
         if (t.type == token_op) {
             token *pop_token;
-            //int is_correct = 0;
             while (head &&
                     ((*head).item.type == token_op &&
-                    operation_get_priority((*head).item.name[0]) >=
-                    operation_get_priority(t.name[0]))) {
+                    op_get_priority(op_list_head, (*head).item.name) >=
+                    op_get_priority(op_list_head, t.name))) {
                         if ((pop_token = POP_TOKEN(head))) {
                             PUT(result, *pop_token);
                             free(pop_token);
@@ -240,8 +186,8 @@ int calculate(token_list *head, var *out)
                         }
                     }
                     if (!strcmp(head->item.name, "^")) {
-                        res.type = var_double;
-                        res.value.double_val = pow(op1->value.int_val, op2->value.int_val);
+                        res.type = var_int;
+                        res.value.int_val = binpow(op1->value.int_val, op2->value.int_val);
                         PUSH(stack, res);
                     }
                 } else {
@@ -288,41 +234,41 @@ int calculate(token_list *head, var *out)
             var res;
             res.type = var_double;
 
-#define FUN_CALL_1(fun) \
+#define STDFUN_CALL(fun) \
     res.value.double_val = fun(op[0]->value.double_val); \
     printf("Fun:: " #fun "(%lf) = %lf\n", op[0]->value.double_val, res.value.double_val); \
     PUSH(stack, res);
 
-#define FUN_APPLY_1(fun) \
+#define STDFUN_APPLY(fun) \
     if (!strcmp(head->item.name, #fun)) { \
-        FUN_CALL_1(fun); \
+        STDFUN_CALL(fun); \
     }
 
-#define FUN_APPLY_DIAPASONE_1(fun, left, right) \
+#define STDFUN_APPLY_DIAPASONE(fun, left, right) \
     if (!strcmp(head->item.name, #fun)) { \
         if (op[0]->value.double_val >= left && op[0]->value.double_val <= right) { \
-            FUN_CALL_1(fun); \
+            STDFUN_CALL(fun); \
         } else \
             goto fail; \
     }
 
-#define FUN_APPLY_2(fun) \
+#define EXTFUN_APPLY(fun) \
     if (!strcmp(head->item.name, #fun)) { \
-        if (!fun(op, prod->par_amount, &res.value.double_val)) { \
+        if (!fun(op, prod->par_amount, &res)) { \
             goto fail; \
         } \
         PUSH(stack, res); \
     }
 
-            FUN_APPLY_1(sin); FUN_APPLY_1(cos); FUN_APPLY_1(tan); FUN_APPLY_1(ctg);
-            FUN_APPLY_1(exp); FUN_APPLY_1(atan); FUN_APPLY_1(actg);
-            FUN_APPLY_DIAPASONE_1(asin, -1, 1);
-            FUN_APPLY_DIAPASONE_1(acos, -1, 1);
-            FUN_APPLY_DIAPASONE_1(sqrt, 0, INFINITY);
-            FUN_APPLY_DIAPASONE_1(ln, 0, INFINITY);
-            FUN_APPLY_DIAPASONE_1(log10, 0, INFINITY);
+            STDFUN_APPLY(sin); STDFUN_APPLY(cos); STDFUN_APPLY(tan); STDFUN_APPLY(ctg);
+            STDFUN_APPLY(exp); STDFUN_APPLY(atan); STDFUN_APPLY(actg);
+            STDFUN_APPLY_DIAPASONE(asin, -1, 1);
+            STDFUN_APPLY_DIAPASONE(acos, -1, 1);
+            STDFUN_APPLY_DIAPASONE(sqrt, 0, INFINITY);
+            STDFUN_APPLY_DIAPASONE(ln, 0, INFINITY);
+            STDFUN_APPLY_DIAPASONE(log10, 0, INFINITY);
             // Add func
-            FUN_APPLY_2(logbase);
+            EXTFUN_APPLY(logbase);
             for (int i = 0; i < prod->par_amount; ++i) {
                 free(op[i]);
             }
@@ -342,10 +288,10 @@ fail:
 
 #undef OPERATION_APPLY_DOUBLE
 #undef OPERATION_APPLY_INT
-#undef FUN_APPLY_1
-#undef FUN_APPLY_DIAPASONE_1
-#undef FUN_CALL_1
-#undef FUN_APPLY_2
+#undef STDFUN_APPLY
+#undef STDFUN_APPLY_DIAPASONE
+#undef STDFUN_CALL
+#undef EXTFUN_APPLY
 }
 
 int produse(char *expr, var *out)
@@ -388,6 +334,7 @@ int main()
 {
     fun_init_base(&fun_list_head);
     var_init(&var_list_head);
+    operations_init(&op_list_head);
     char *expr = malloc(TOKEN_NAME_SIZE * sizeof (*expr));
     while (1) {
         fgets(expr, TOKEN_NAME_SIZE, stdin);
@@ -428,5 +375,6 @@ int main()
     }
     CLEAR_FUNC(fun_list_head);
     CLEAR_VAR(var_list_head);
+    CLEAR_OP(op_list_head);
     return 0;
 }

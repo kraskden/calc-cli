@@ -53,3 +53,11 @@ void var_to_list(var_list **head, var arg)
     } else
         PUSH(*head, arg);
 }
+
+int is_float_const(const char *name)
+{
+    for (int i = 0; i < (int)strlen(name); ++i)
+        if (name[i] == DOT)
+            return 1;
+    return 0;
+}

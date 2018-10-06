@@ -1,8 +1,7 @@
 #include "token.h"
-
+#include "extmath.h"
 #include <stdlib.h>
 #include <string.h>
-#include <extmath.h>
 #include <ctype.h>
 
 void skip_spaces(char *expr, int *pos)

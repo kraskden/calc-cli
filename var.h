@@ -41,5 +41,6 @@ void var_init(var_list **head);
 int name_to_var(var_list *head, char *src, var *out);
 void expr_to_var(char *src, var *out);
 void var_to_list(var_list **head, var arg);
+int is_float_const(const char *name);
 
 #endif

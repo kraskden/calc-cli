@@ -9,13 +9,15 @@ SOURCES += \
     extmath.c \
     var.c \
     token.c \
-    fun.c
+    fun.c \
+    operations.c
 
 HEADERS += \
     var.h \
     fun.h \
     list.h \
     token.h \
-    extmath.h
+    extmath.h \
+    operations.h
 
 DISTFILES +=

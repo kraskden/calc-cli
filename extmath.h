@@ -8,6 +8,7 @@
 double ctg(double x);
 double actg(double x);
 double ln(double x);
-int logbase(var **par, int len, double *result);
+int logbase(var **par, int len, var *result);
+int binpow (int a, int n);
 
 #endif
