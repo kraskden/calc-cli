@@ -24,3 +24,12 @@ const fun* name_to_fun(const fun_list *head, const char* name)
     }
     return NULL;
 }
+
+void fun_var_clear(fun_list *head)
+{
+    for (; head; head = head->next) {
+        if (head->function.type == fun_extended) {
+            CLEAR_VAR(head->function.par);
+        }
+    }
+}

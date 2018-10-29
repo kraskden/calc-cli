@@ -306,7 +306,14 @@ int produse(char *expr, var *out)
     return 1;
 }
 
-int var_add(char *expr, var_list **head)
+
+enum define_ret {
+    def_succ, def_nop, def_err
+};
+
+typedef enum define_ret define_ret;
+
+define_ret var_add(char *expr, var_list **head)
 {
     int pos = 0;
     var add;
@@ -314,21 +321,41 @@ int var_add(char *expr, var_list **head)
     if ((t = get_token(expr, &pos)).type != token_empty) {
         char *name = t.name;
         if (strcmp((t = get_token(expr, &pos)).name, "="))
-            return 0;
+            return def_nop;
         char *value = malloc(strlen(expr));
         strcpy(value, expr + pos);
         if (produse(value, &add)) {
             strcpy(add.name, name);
             //PUSH(*head, add);
             var_to_list(head, add);
-            return 1;
+            return def_succ;
         }
         else
-            return -1;
+            return def_err;
     } else
-        return 0;
+        return def_nop;
 }
 
+/*
+ *
+ * Test add of preprocessor
+ */
+
+
+define_ret check_define(char *expr, var_list **v, fun_list **f)
+{
+    //token_list *head = NULL;
+    token t;
+    int pos = 0;
+    if ((t = get_token(expr, &pos)).type != token_empty) {
+        if (t.type == token_var) {
+            return var_add(expr, v);
+        } else if (t.type == token_fun) {
+
+        }
+    }
+    return def_nop;
+}
 
 int main()
 {
@@ -340,12 +367,13 @@ int main()
         fgets(expr, TOKEN_NAME_SIZE, stdin);
         if (*expr)
             expr[strlen(expr) - 1] = '\0';
-        switch (var_add(expr, &var_list_head)) {
-        case 0:
+        //switch (var_add(expr, &var_list_head)) {
+        switch (check_define(expr, &var_list_head, &fun_list_head))  {
+        case def_nop:
             break;
-        case 1:
+        case def_succ:
             continue;
-        case -1:
+        case def_err:
             puts("Error var defined!");
             continue;
         }
