@@ -120,6 +120,8 @@ error:
     return NULL;
 }
 
+int produse(char *expr, var *out);
+
 int calculate(token_list *head, var *out)
 {
     var_list *stack = NULL;
@@ -227,12 +229,26 @@ int calculate(token_list *head, var *out)
             }
             if (!stack && i < prod->par_amount)
                 goto fail;
-            //op = POP_VAR(stack);
-            //if (op->type == var_int) {
-            //    op->value.double_val = op->value.int_val;
-            //}
             var res;
             res.type = var_double;
+
+            if (prod->type == fun_extended) {
+                // For extended fun calling
+                for (int i = 0; i < prod->par_amount; ++i) {
+                    var *par;
+                    par = POP_VAR(prod->par);
+                    strcpy(op[i]->name, par->name);
+                    PUSH(var_list_head, *(op[i]));
+                    // Need to push in var_list_head real param
+                }
+                int is_produse = produse(prod->expr, &res);
+                for (int i = 0; i < prod->par_amount; ++i) {
+                    POP_VAR(var_list_head);
+                }
+                if (!is_produse)
+                    goto fail;
+                PUSH(stack, res);
+            }
 
 #define STDFUN_CALL(fun) \
     res.value.double_val = fun(op[0]->value.double_val); \
@@ -336,6 +352,49 @@ define_ret var_add(char *expr, var_list **head)
         return def_nop;
 }
 
+define_ret fun_add(char *expr, fun_list **head)
+{
+    int pos = 0;
+    fun add;
+    add.type = fun_extended;
+    int par_amount = 0;
+    token t;
+    t = get_token(expr, &pos);
+    strcpy(add.name, t.name);
+    get_token(expr, &pos); // Read '('
+    add.par = NULL;
+    var par_add;
+    while ((t = get_token(expr, &pos)).type != token_brc_c) {
+        if (t.type == token_arg_delim)
+            continue;
+        if (t.type != token_var) {
+            CLEAR_VAR(add.par);
+            return def_nop;
+        }
+        strcpy(par_add.name, t.name);
+        par_add.type = var_double;
+        PUSH(add.par, par_add);
+        PUSH(var_list_head, par_add); // Add to global
+        ++par_amount;
+    }
+    if (strcmp((t = get_token(expr, &pos)).name, "=")) {
+        CLEAR_VAR(add.par);
+        for (int i = 0; i < par_amount; ++i)
+            POP_VAR(var_list_head); // Remove from global list
+        return def_nop;
+    }
+    add.par_amount = par_amount;
+    strcpy(add.expr, expr + pos);
+    token_list *check;
+    if (!(check = polish_convert(add.expr)))
+        return def_err;
+    for (int i = 0; i < par_amount; ++i)
+        POP_VAR(var_list_head); // Remove from global list
+    CLEAR_TOKEN(check);
+    PUSH(*head, add);
+    return def_succ;
+}
+
 /*
  *
  * Test add of preprocessor
@@ -351,7 +410,7 @@ define_ret check_define(char *expr, var_list **v, fun_list **f)
         if (t.type == token_var) {
             return var_add(expr, v);
         } else if (t.type == token_fun) {
-
+            return fun_add(expr, f);
         }
     }
     return def_nop;
