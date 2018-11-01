@@ -122,6 +122,72 @@ error:
 
 int produse(char *expr, var *out);
 
+int apply_operation(var_list **stack, operation *op)
+{
+    if (!(*stack))
+        return 0;
+    var *y = POP_VAR(*stack);
+    if (op->type == op_negative) {
+        if (y->type == var_int)
+            y->value.int_val *= -1;
+        else
+            y->value.double_val *= -1;
+        PUSH(*stack, *y);
+    } else {
+        if (!(*stack))
+            return 0;
+        var *x = POP_VAR(*stack);
+        var res;
+        int is_int_op = 0;
+        if (x->type == var_int && y->type == var_int) {
+            if (op->type == op_div && (x->value.int_val % y->value.int_val)) {
+                x->value.double_val = x->value.int_val;
+                y->value.double_val = y->value.int_val;
+                is_int_op = 0;
+            }
+            else
+                is_int_op = 1;
+        } else {
+            if (x->type == var_int)
+                x->value.double_val = x->value.int_val;
+            if (y->type == var_int)
+                y->value.double_val = y->value.int_val;
+        }
+        res.type = is_int_op ? var_int : var_double;
+#define APPLY_STD_OPERATION(op) \
+    if (is_int_op) res.value.int_val = (x->value.int_val op y->value.int_val); else \
+    res.value.double_val = (x->value.double_val op y->value.double_val)
+        switch (op->type) {
+        case op_plus:
+            APPLY_STD_OPERATION(+);
+            break;
+        case op_minus:
+            APPLY_STD_OPERATION(-);
+            break;
+        case op_mult:
+            APPLY_STD_OPERATION(*);
+            break;
+        case op_div:
+            if(is_int_op ? y->value.int_val == 0 : (y->value.double_val < 0.00000000001 && y->value.double_val > -0.00000000001))
+                return 0;
+            APPLY_STD_OPERATION(/);
+            break;
+        case op_power:
+            if (!is_int_op)
+                res.value.double_val = pow(x->value.double_val, y->value.double_val);
+            else
+                res.value.int_val = binpow(x->value.int_val, y->value.int_val);
+            break;
+        default:
+            break;
+        }
+        free(x);
+        free(y);
+        PUSH(*stack, res);
+    }
+#undef APPLY_STD_OPERATION
+}
+
 int calculate(token_list *head, var *out)
 {
     var_list *stack = NULL;
@@ -134,6 +200,11 @@ int calculate(token_list *head, var *out)
             name_to_var(var_list_head, head->item.name, &to_push);
             PUSH(stack, to_push);
         } else if (head->item.type == token_op) {
+#define NEW_FEATURE
+            operation *op = name_to_operation(op_list_head, head->item.name);
+            if (!op || !apply_operation(&stack, op))
+                goto fail;
+#ifndef NEW_FEATURE
             if (!strcmp(head->item.name, "negative")) {
                 if (!stack)
                     return 0;
@@ -215,6 +286,7 @@ int calculate(token_list *head, var *out)
                 free(op1);
                 free(op2);
             }
+#endif
         } else if (head->item.type == token_fun) {
             const fun *prod = name_to_fun(fun_list_head, head->item.name);
             if (!prod)
@@ -234,9 +306,11 @@ int calculate(token_list *head, var *out)
 
             if (prod->type == fun_extended) {
                 // For extended fun calling
-                for (int i = 0; i < prod->par_amount; ++i) {
+                var_list *prod_par = prod->par;
+                for (int i = 0; i < prod->par_amount; ++i, prod_par = prod_par->next) {
                     var *par;
-                    par = POP_VAR(prod->par);
+                    par = &(prod_par->variable);
+                    //par = POP_VAR(prod->par); //NON POP!!!;
                     strcpy(op[i]->name, par->name);
                     PUSH(var_list_head, *(op[i]));
                     // Need to push in var_list_head real param
@@ -394,12 +468,6 @@ define_ret fun_add(char *expr, fun_list **head)
     PUSH(*head, add);
     return def_succ;
 }
-
-/*
- *
- * Test add of preprocessor
- */
-
 
 define_ret check_define(char *expr, var_list **v, fun_list **f)
 {
