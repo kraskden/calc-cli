@@ -10,7 +10,9 @@ SOURCES += \
     var.c \
     token.c \
     fun.c \
-    operations.c
+    operations.c \
+    define.c \
+    calc.c
 
 HEADERS += \
     var.h \
@@ -18,6 +20,8 @@ HEADERS += \
     list.h \
     token.h \
     extmath.h \
-    operations.h
+    operations.h \
+    define.h \
+    calc.h
 
 DISTFILES +=
