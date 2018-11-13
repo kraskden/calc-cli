@@ -31,6 +31,8 @@ define_ret var_add(char *expr, var_list **head)
 
 define_ret fun_add(char *expr, fun_list **head)
 {
+    if (!strchr(expr, '='))
+        return def_nop;
     int pos = 0;
     fun add;
     add.type = fun_extended;
@@ -46,6 +48,8 @@ define_ret fun_add(char *expr, fun_list **head)
             continue;
         if (t.type != token_var) {
             CLEAR_VAR(add.par);
+            for (int i = 0; i < par_amount; ++i)
+                POP_VAR(var_list_head);
             return def_nop;
         }
         strcpy(par_add.name, t.name);

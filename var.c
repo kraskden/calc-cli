@@ -37,6 +37,7 @@ void expr_to_var(char *src, var *out)
     } else {
         out->type = var_int;
         out->value.int_val = atoi(src);
+        out->value.double_val = out->value.int_val;
     }
 }
 
