@@ -83,8 +83,7 @@ token_list *polish_convert(char *expr)
             token *pop_token;
             while (head &&
                     ((*head).item.type == token_op &&
-                    op_get_priority(op_list_head, (*head).item.name) >=
-                    op_get_priority(op_list_head, t.name))) {
+                    op_is_higher(op_list_head, (*head).item.name, t.name))) {
                         if ((pop_token = POP_TOKEN(head))) {
                             PUT(result, *pop_token);
                             free(pop_token);

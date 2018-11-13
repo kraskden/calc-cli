@@ -35,6 +35,8 @@ int main()
         fgets(expr, TOKEN_NAME_SIZE, stdin);
         if (*expr)
             expr[strlen(expr) - 1] = '\0';
+        if (!strcmp(expr, "exit"))
+            break;
         //switch (var_add(expr, &var_list_head)) {
         switch (check_define(expr, &var_list_head, &fun_list_head))  {
         case def_nop:

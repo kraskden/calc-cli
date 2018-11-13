@@ -25,6 +25,17 @@ int op_get_priority(operation_list *head, char *name)
         return 0;
 }
 
+// Right-associative operations also supported
+int op_is_higher(operation_list *head, char *fst, char *snd)
+{
+    int fst_priority = op_get_priority(head, fst);
+    int snd_priority = op_get_priority(head, snd);
+    if (!strcmp(fst, "^"))
+        return fst_priority > snd_priority;
+    else
+        return fst_priority >= snd_priority;
+}
+
 operation *name_to_operation(operation_list *head, const char *name)
 {
     for (; head; head = head->next) {

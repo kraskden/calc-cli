@@ -31,6 +31,6 @@ typedef struct operation_list operation_list;
 #define CLEAR_OP(head) CLEAR(head, operation)
 
 void operations_init(operation_list **head);
-int op_get_priority(operation_list *head, char *name);
+int op_is_higher(operation_list *head, char *fst, char *snd);
 operation *name_to_operation(operation_list *head, const char *name);
 #endif
