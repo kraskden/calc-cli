@@ -5,7 +5,7 @@
 #include "var.h"
 
 enum define_ret {
-    def_succ, def_nop, def_err
+    def_var, def_fun, def_nop, def_err
 };
 
 typedef enum define_ret define_ret;

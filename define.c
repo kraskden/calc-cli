@@ -21,7 +21,7 @@ define_ret var_add(char *expr, var_list **head)
             strcpy(add.name, name);
             //PUSH(*head, add);
             var_to_list(head, add);
-            return def_succ;
+            return def_var;
         }
         else
             return def_err;
@@ -73,7 +73,7 @@ define_ret fun_add(char *expr, fun_list **head)
         POP_VAR(var_list_head); // Remove from global list
     CLEAR_TOKEN(check);
     PUSH(*head, add);
-    return def_succ;
+    return def_fun;
 }
 
 define_ret check_define(char *expr, var_list **v, fun_list **f)

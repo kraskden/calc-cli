@@ -83,7 +83,8 @@ token_list *polish_convert(char *expr)
             token *pop_token;
             while (head &&
                     ((*head).item.type == token_op &&
-                    op_is_higher(op_list_head, (*head).item.name, t.name))) {
+                    op_get_priority(op_list_head, (*head).item.name) >=
+                    op_get_priority(op_list_head, t.name))) {
                         if ((pop_token = POP_TOKEN(head))) {
                             PUT(result, *pop_token);
                             free(pop_token);
@@ -116,7 +117,7 @@ int apply_operation(var_list **stack, operation *op)
     if (op->type == op_negative) {
         if (y->type == var_int)
             y->value.int_val *= -1;
-        //else
+        else
             y->value.double_val *= -1;
         PUSH(*stack, *y);
     } else {
@@ -126,22 +127,22 @@ int apply_operation(var_list **stack, operation *op)
         var res;
         int is_int_op = 0;
         if (x->type == var_int && y->type == var_int) {
-            if (op->type == op_div && (y->value.int_val) && (x->value.int_val % y->value.int_val)) {
-                //x->value.double_val = x->value.int_val;
-                //y->value.double_val = y->value.int_val;
+            if (op->type == op_div && (x->value.int_val % y->value.int_val)) {
+                x->value.double_val = x->value.int_val;
+                y->value.double_val = y->value.int_val;
                 is_int_op = 0;
             }
             else
                 is_int_op = 1;
-        } //else {
-            //if (x->type == var_int)
-            //    x->value.double_val = x->value.int_val;
-            //if (y->type == var_int)
-            //    y->value.double_val = y->value.int_val;
-        //}
+        } else {
+            if (x->type == var_int)
+                x->value.double_val = x->value.int_val;
+            if (y->type == var_int)
+                y->value.double_val = y->value.int_val;
+        }
         res.type = is_int_op ? var_int : var_double;
 #define APPLY_STD_OPERATION(op) \
-    if (is_int_op) res.value.int_val = (x->value.int_val op y->value.int_val); \
+    if (is_int_op) res.value.int_val = (x->value.int_val op y->value.int_val); else \
     res.value.double_val = (x->value.double_val op y->value.double_val)
         switch (op->type) {
         case op_plus:
@@ -199,9 +200,9 @@ int calculate(token_list *head, var *out)
             int i;
             for (i = 0; i < prod->par_amount && stack; ++i) {
                 op[i] = POP_VAR(stack);
-                //if (op[i]->type == var_int) {
-                //    op[i]->value.double_val = op[i]->value.int_val;
-                //}
+                if (op[i]->type == var_int) {
+                    op[i]->value.double_val = op[i]->value.int_val;
+                }
             }
             if (!stack && i < prod->par_amount)
                 goto fail;
@@ -227,7 +228,6 @@ int calculate(token_list *head, var *out)
 
 #define STDFUN_CALL(fun) \
     res.value.double_val = fun(op[0]->value.double_val); \
-    printf("Fun:: " #fun "(%lf) = %lf\n", op[0]->value.double_val, res.value.double_val); \
     PUSH(stack, res);
 
 #define STDFUN_APPLY(fun) \

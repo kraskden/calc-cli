@@ -4,7 +4,7 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += \
-        main.c \
+    main.c \
     list.c \
     extmath.c \
     var.c \
@@ -12,7 +12,8 @@ SOURCES += \
     fun.c \
     operations.c \
     define.c \
-    calc.c
+    calc.c \
+    mparser.c
 
 HEADERS += \
     var.h \
@@ -22,6 +23,7 @@ HEADERS += \
     extmath.h \
     operations.h \
     define.h \
-    calc.h
+    calc.h \
+    mparser.h
 
 DISTFILES +=
